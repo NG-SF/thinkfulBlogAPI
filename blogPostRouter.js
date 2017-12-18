@@ -8,23 +8,30 @@ const { BlogPosts } = require('./models');
 
 // adding some blog posts
 // so there's some data to look at
-BlogPosts.create('beans', 2);
-BlogPosts.create('tomatoes', 3);
-BlogPosts.create('peppers', 4);
+BlogPosts.create(
+  'Lorem',
+  'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
+  'John Doe'
+);
+BlogPosts.create(
+  'Star Wars',
+  "Luke Skywalker's peaceful and solitary existence gets upended when he encounters Rey, a young woman who shows strong signs of the Force. Her desire to learn the ways of the Jedi forces Luke to make a decision that changes their lives forever.",
+  'Jane Doe'
+);
 
 // when the root of this router is called with GET, return
-// all current ShoppingList items
+// all current blog posts
 router.get('/', (req, res) => {
-  res.json(ShoppingList.get());
+  res.json(BlogPosts.get());
 });
 
-// when a new shopping list item is posted, make sure it's
-// got required fields ('name' and 'checked'). if not,
+// when a new blog post is posted, make sure it's
+// got required fields ('title','content','author'). if not,
 // log an error and return a 400 status code. if okay,
-// add new item to ShoppingList and return it with a 201.
+// add new post with a 201.
 router.post('/', jsonParser, (req, res) => {
-  // ensure `name` and `budget` are in request body
-  const requiredFields = ['name', 'checked'];
+  // ensure 'title', 'content', 'author' are in request body
+  const requiredFields = ['title', 'content', 'author'];
   for (let i = 0; i < requiredFields.length; i++) {
     const field = requiredFields[i];
     if (!(field in req.body)) {
@@ -33,15 +40,15 @@ router.post('/', jsonParser, (req, res) => {
       return res.status(400).send(message);
     }
   }
-  const item = ShoppingList.create(req.body.name, req.body.checked);
+  const post = BlogPosts.create(req.body.title, req.body.content, req.body.author);
   res.status(201).json(item);
 });
 
 // when DELETE request comes in with an id in path,
-// try to delete that item from ShoppingList.
+// try to delete that item from posts.
 router.delete('/:id', (req, res) => {
-  ShoppingList.delete(req.params.id);
-  console.log(`Deleted shopping list item \`${req.params.ID}\``);
+  BlogPosts.delete(req.params.id);
+  console.log(`Deleted post \`${req.params.ID}\``);
   res.status(204).end();
 });
 
@@ -49,9 +56,9 @@ router.delete('/:id', (req, res) => {
 // required fields. also ensure that item id in url path, and
 // item id in updated item object match. if problems with any
 // of that, log error and send back status code 400. otherwise
-// call `ShoppingList.update` with updated item.
+// call `BlogPosts.update` with updated item.
 router.put('/:id', jsonParser, (req, res) => {
-  const requiredFields = ['name', 'budget', 'id'];
+  const requiredFields = ['title', 'content', 'author', 'id'];
   for (let i = 0; i < requiredFields.length; i++) {
     const field = requiredFields[i];
     if (!(field in req.body)) {
@@ -65,14 +72,14 @@ router.put('/:id', jsonParser, (req, res) => {
     console.error(message);
     return res.status(400).send(message);
   }
-  console.log(`Updating shopping list item \`${req.params.id}\``);
-  const updatedItem = ShoppingList.update({
+  console.log(`Updating post \`${req.params.id}\``);
+  const updatedPost = BlogPosts.update({
     id: req.params.id,
-    name: req.body.name,
-    budget: req.body.budget
+    title: req.body.title,
+    content: req.body.content,
+    author: req.body.author
   });
   res.status(204).end();
 });
 
 module.exports = router;
-
