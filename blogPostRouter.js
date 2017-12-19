@@ -41,14 +41,14 @@ router.post('/', jsonParser, (req, res) => {
     }
   }
   const post = BlogPosts.create(req.body.title, req.body.content, req.body.author);
-  res.status(201).json(item);
+  res.status(201).json(post);
 });
 
 // when DELETE request comes in with an id in path,
 // try to delete that item from posts.
 router.delete('/:id', (req, res) => {
   BlogPosts.delete(req.params.id);
-  console.log(`Deleted post \`${req.params.ID}\``);
+  console.log(`Deleted post \`${req.params.id}\``);
   res.status(204).end();
 });
 
