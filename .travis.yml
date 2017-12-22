@@ -1,2 +1,9 @@
 language: node_js
 node_js: node
+deploy:
+  provider: heroku
+  api_key:
+    secure: ChW8mem9vkbNEjMN19GKzKjNSN+uZTvu2CpBCYxpkyhsaIXQ3cYi/II8jDJmS8wTGDJZQCAQnkJlbewQOjBjcVmsHC3c9hFMcNw9mvfTofvxNoRLCIz2bnFfrYJk7DK+WB329H6eGiidIeJDkq7S06AXOfQAyR7JGMVfh62s1YvGXHj1rjs7KEpDiUf/Pc4dR8XJLI+CMocWTV2MAO19gGF0DrhhF3kQ/0okfC5VCGmDe80F3EKCBVFChiFOkQJKzHKmUB+aDP2x8qJZoSDdC+ynsiGBHWID6S6tvhjNeZUSDCmG4acZ950ROPV4D4AJsW3vG08WXEyxIiq/1jO2k9/zfv9g5UTzWA4MItXBTyv5zitZ6DIocpV7dIise1s1D6fqj5eVMJGfBlKXB10FZr0mVOALuVWk1HMlcjOXIb1YlrI6d1qR3jJuiQcrPM/IT2WVbMh2Qxgn2hWNABu7Yg7v0msAdzphhmLw7ReTlOoZPXqkuQmgJyW8BqC2nvG5uj/O2GJr8FITvjzs7KdYQAnCi2TUUPernR9OgqAOCvAgfD8jrOgq/C4G+XOCBhUT/q1rH/WPB2qKw/QWWcHf7QXzuNyk+t1b7/c9urbLhFXKn6jtKABmVnq+C/FlNGc5w6pxXTUAzKrnP/vOFQNoBWmS8TU+sGhut0bBFS8nVsQ=
+  app: blooming-earth-99378
+  on:
+    repo: NG-SF/thinkfulBlogAPI
