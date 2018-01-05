@@ -17,10 +17,12 @@ app.use(express.static('public'));
 // router instances we've imported.
 app.use('/posts', blogPostRouter);
 
+let server;
+
 function runServer(databaseUrl = DATABASE_URL, port = PORT) {
 
   return new Promise((resolve, reject) => {
-    mongoose.connect(databaseUrl, {useMongoClient: true}, err => {
+    mongoose.connect(databaseUrl, err => {
       if (err) {
         return reject(err);
       }
