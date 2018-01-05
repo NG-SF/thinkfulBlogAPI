@@ -1,9 +1,10 @@
 'use strict';
 const mongoose = require('mongoose');
+mongoose.Promise = global.Promise;
 
 // represents schema for blog posts
 const blogSchema = mongoose.Schema({
-  title: String,
+  title: {type: String, required: true},
   content: String,
   author: {
     firstName: String,

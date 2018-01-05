@@ -13,12 +13,9 @@ router.use(bodyParser.json());
 router.get('/', (req, res) => {
   BlogPost.find()
     .then(posts => {
-      res.json({
-      posts: posts.map( 
-        (post) => post.serialize())
-    })
+      res.json(posts.map((post) => post.serialize()))
   }).catch(err => {
-    console.log(err);
+    console.error(err);
     res.status(500).json({message: "Can't get blog posts. Something went wrong."});
   });
 });
@@ -48,27 +45,30 @@ router.post('/', (req, res) => {
       return res.status(400).send(message);
     }
   }
-  BlogPost.create({
-    title: req.body.title,
-    content: req.body.content,
-    author: req.body.author})
+  BlogPost
+    .create({
+      title: req.body.title,
+      content: req.body.content,
+      author: req.body.author})
     .then(post => res.status(201).json(post.serialize()))
     .catch(err => { 
-    console.error(err);
-    res.status(500).json({message: "Sorry, cannot create your post. Internal error."});
+      console.error(err);
+      res.status(500).json({message: "Sorry, cannot create your post. Internal error."});
 });
 });
 
 // when DELETE request comes in with an id in path,
 // try to delete that item from posts.
 router.delete('/:id', (req, res) => {
-  BlogPost.findByIdAndRemove(req.params.id)
-    .then(() => res.status(204).end())
+  BlogPost
+    .findByIdAndRemove(req.params.id)
+    .then(() => {res.status(204).json({message: "Successfuly removed your post"});})
     .catch(err => {
       console.error(err);
       res.status(500).json({message: "Can't delete your post. Something went wrong."})
     });
 });
+
 // when PUT request comes in with updated item, ensure has
 // required fields. also ensure that item id in url path, and
 // item id in updated item object match. if problems with any
@@ -92,7 +92,7 @@ router.put('/:id', (req, res) => {
   });
   BlogPost
   .findByIdAndUpdate(req.params.id, {$set: toUpdate})
-  .then(post => res.status(204).end())
+  .then(post => {res.status(204).json({message: "Your post was updated!"})})
   .catch(err => res.status(500).json({message: "Internal error"}));
 });
 

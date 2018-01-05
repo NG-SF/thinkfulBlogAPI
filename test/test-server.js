@@ -43,7 +43,7 @@ describe('BlogPosts', function() {
     // and returns a Promise, so we just return it.
     return chai
       .request(app)
-      .get('/blog-posts')
+      .get('/posts')
       .then(function(res) {
         res.should.have.status(200);
         res.should.be.json;
@@ -68,12 +68,13 @@ describe('BlogPosts', function() {
     const newPost = {
       title: 'Coffee',
       content: 'coffee is particularly good in the mornings',
-      author: 'Jane Doe',
-      publishDate: 12212017
+      author: {
+        firstName:'Jane', 
+        lastName: 'Doe'}
     };
     return chai
       .request(app)
-      .post('/blog-posts')
+      .post('/posts')
       .send(newPost)
       .then(function(res) {
         res.should.have.status(201);
@@ -109,7 +110,7 @@ describe('BlogPosts', function() {
       chai
         .request(app)
         // first have to get so we have an idea of object to update
-        .get('/blog-posts')
+        .get('/posts')
         .then(function(res) {
           updateData.id = res.body[0].id;
           // this will return a promise whose value will be the response
@@ -119,7 +120,7 @@ describe('BlogPosts', function() {
           // this approach cleaner and easier to read and reason about.
           return chai
             .request(app)
-            .put(`/blog-posts/${updateData.id}`)
+            .put(`/posts/${updateData.id}`)
             .send(updateData);
         })
         // prove that the PUT request has right status code
@@ -139,9 +140,9 @@ describe('BlogPosts', function() {
         .request(app)
         // first have to get so we have an `id` of item
         // to delete
-        .get('/blog-posts')
+        .get('/posts')
         .then(function(res) {
-          return chai.request(app).delete(`/blog-posts/${res.body[0].id}`);
+          return chai.request(app).delete(`/posts/${res.body[0].id}`);
         })
         .then(function(res) {
           res.should.have.status(204);
