@@ -10,7 +10,7 @@ const blogSchema = mongoose.Schema({
     firstName: String,
     lastName: String
     },
-  created: Date
+  created: {type: Date, default: Date.now()}
 });
 
 // virtual property to return full author name
@@ -28,5 +28,5 @@ blogSchema.methods.serialize = function() {
   };
 }
 
-const BlogPost = mongoose.model('Post', blogSchema);
+const BlogPost = mongoose.model('posts', blogSchema);
 module.exports = { BlogPost };
