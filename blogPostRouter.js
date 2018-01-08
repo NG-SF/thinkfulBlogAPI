@@ -13,7 +13,10 @@ router.use(bodyParser.json());
 router.get('/', (req, res) => {
   BlogPost.find()
     .then(posts => {
-      res.json(posts.map((post) => post.serialize()))
+      res.json({
+        posts: posts.map(
+          (post) => post.serialize())
+          });
   }).catch(err => {
     console.error(err);
     res.status(500).json({message: "Can't get blog posts. Something went wrong."});
@@ -92,7 +95,7 @@ router.put('/:id', (req, res) => {
   });
   BlogPost
   .findByIdAndUpdate(req.params.id, {$set: toUpdate})
-  .then(post => res.status(200).json({message: "Your post was updated!"}))
+  .then(post => res.status(204).end())
   .catch(err => res.status(500).json({message: "Internal error"}));
 });
 

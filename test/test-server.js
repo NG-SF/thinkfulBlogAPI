@@ -1,3 +1,4 @@
+'use strict';
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const faker = require('faker');
@@ -14,27 +15,27 @@ chai.use(chaiHttp);
 function seedBlogData() {
   console.info('seeding data');
   const seedData = [];
+  
   for (let i=1; i<=10; i++) {
     seedData.push(generateBlogData());
   }
   return BlogPost.insertMany(seedData);
 }
 
-// generate an object represnting a blog post
+// generate an object representing a blog post
 // can be used to generate seed data for db
 // or request.body data
 function generateBlogData() {
   return {
     title: faker.lorem.sentence(),
-    content: faker.lorem.content(),
+    content: faker.lorem.paragraph,
     author: {
       firstName: faker.name.firstName(),
       lastName:  faker.name.lastName()
     },
     created: faker.date.recent()
 }
-
-
+}
 // this function deletes the entire database.
 // we'll call it in an `afterEach` block below
 // to ensure data from one test does not stick
@@ -44,7 +45,8 @@ function tearDownDb() {
   return mongoose.connection.dropDatabase();
 }
 
-describe('BlogPosts', function() {
+describe('BlogPosts API resource', function() {
+  
   before(function() {
     return runServer(TEST_DATABASE_URL);
   });
@@ -63,24 +65,29 @@ describe('BlogPosts', function() {
 
 describe('GET endpoint', function() {
 
-  it('should return all existing posts on GET', function() {
-
-    return chai
-      .request(app)
+  it('should return all existing blog posts', function() {
+// strategy:
+//1. get back all blog posts returned by by GET request to `/posts`
+//2. prove res has right status, data type
+//3. prove the number of posts we got back is equal to number in db. 
+// need to have access to mutate and access `res` across `.then()` calls below, so declare it here so can modify in place
+  let res;
+    return chai.request(app)
       .get('/posts')
       .then(function(_res) {
+// so subsequent .then blocks can access response object
         res = _res;
-        res.should.have.status(200);
+        expect(res).to.have.status(200);
         res.body.posts.should.have.length.of.at.least(1);
         return BlogPost.count();
       })
       .then(function(count) {
-        res.body.posts.should.have.length.of(count);
+        expect(res.body.posts).to.have.length.of(count);
       });
   });
 
   it('should return blog posts with right fields', function() {
-
+ // Strategy: Get back all blog posts, and ensure they have expected keys
     let resPost;
 
       return chai.request(app)
@@ -103,20 +110,21 @@ describe('GET endpoint', function() {
           expect(resPost.id).to.equal(post.id);
           expect(resPost.title).to.equal(post.title);
           expect(resPost.content).to.equal(post.content);
-          expect(resPost.author).to.equal(post.author);
+          expect(resPost.author.firstName).to.equal(post.author.firstName);
+          expect(resPost.author.lastName).to.equal(post.author.lastName);
           expect(resPost.created).to.equal(post.created);
         });
     });
   });
 
 describe('POST endpoint', function() {
-    // strategy: make a POST request with data,
-    // then prove that the blog we get back has
-    // right keys, and that `id` is there (which means
-    // the data was inserted into db)
-    it('should add a new blog post', function() {
+// strategy: make a POST request with data,
+// then prove that the blog we get back has
+// right keys, and that `id` is there (which means
+// the data was inserted into db)
+  it('should add a new blog post', function() {
 
-      const newPost = generateBlogData();
+    const newPost = generateBlogData();
 
       return chai.request(app)
         .post('/posts')
@@ -126,14 +134,12 @@ describe('POST endpoint', function() {
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
           expect(res.body).to.include.keys(
-            'id', 'title', 'content', 'author', 'created');
-          expect(res.body.name).to.equal(newPost.name);
-          // cause Mongo should have created id on insertion
+             'title', 'content', 'author');
+// cause Mongo should have created id on insertion
           expect(res.body.id).to.not.be.null;
           expect(res.body.title).to.equal(newPost.title);
+          expect(res.body.content).to.equal(newPost.content);
           expect(res.body.author).to.equal(newPost.author);
-          expect(res.body.created).to.equal(newPost.created);
-
           return BlogPost.findById(res.body.id);
         })
         .then(function(post) {
@@ -147,15 +153,15 @@ describe('POST endpoint', function() {
   });
  
 describe('PUT endpoint', function() {
-    // strategy:
-    //  1. Get an existing blog post from db
-    //  2. Make a PUT request to update that post
-    //  3. Prove post returned by request contains data we sent
-    //  4. Prove post in db is correctly updated
-    it('should update fields you send over', function() {
-      const updateData = {
-        title: 'This is a test post',
-        content: 'futuristic fusion, solar winds, star wars, star trek and harry potter'
+// strategy:
+//1. Get an existing blog post from db
+//2. Make a PUT request to update that post
+//3. Prove post returned by request contains data we sent
+//4. Prove post in db is correctly updated
+  it('should update fields you send over', function() {
+    const updateData = {
+      title: 'This is a test post',
+      content: 'futuristic fusion, solar winds, star wars, star trek and harry potter'
       };
 
       return BlogPost
@@ -163,9 +169,9 @@ describe('PUT endpoint', function() {
         .then(function(post) {
           updateData.id = post.id;
 
-          // make request then inspect it to make sure it reflects
-          // data we sent
-          return chai.request(app)
+// make request then inspect it to make sure it reflects
+// data we sent
+      return chai.request(app)
             .put(`/posts/${post.id}`)
             .send(updateData);
         })
@@ -182,11 +188,11 @@ describe('PUT endpoint', function() {
   });
 
   describe('DELETE endpoint', function() {
-    // strategy:
-    //  1. get a blog post
-    //  2. make a DELETE request for that post's id
-    //  3. assert that response has right status code
-    //  4. prove that post with the id doesn't exist in db anymore
+// strategy:
+//1. get a blog post
+//2. make a DELETE request for that post's id
+//3. assert that response has right status code
+//4. prove that post with the id doesn't exist in db anymore
     it('delete a blog post by id', function() {
 
       let post;
@@ -195,7 +201,7 @@ describe('PUT endpoint', function() {
         .findOne()
         .then(function(_post) {
           post = _post;
-          return chai.request(app).delete(`/restaurants/${post.id}`);
+          return chai.request(app).delete(`/posts/${post.id}`);
         })
         .then(function(res) {
           expect(res).to.have.status(204);
@@ -207,4 +213,3 @@ describe('PUT endpoint', function() {
     });
   });
 });
-}

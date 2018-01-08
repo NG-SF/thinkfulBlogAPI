@@ -4,7 +4,7 @@
   "description": "thinkful project Blog API",
   "main": "server.js",
   "scripts": {
-    "test": "mocha --exit ./test"
+    "test": "mocha --exit"
   },
   "author": "Nataliya Gapochka",
   "license": "ISC",
@@ -12,8 +12,7 @@
     "body-parser": "^1.15.2",
     "express": "^4.16.2",    
     "mongoose": "^5.0.0-rc2",
-    "morgan": "^1.9.0",
-    "uuid": "^3.1.0"
+    "morgan": "^1.9.0"
   },
   "devDependencies": {
     "chai": "^4.1.2",
