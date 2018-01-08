@@ -50,7 +50,7 @@ router.post('/', (req, res) => {
       title: req.body.title,
       content: req.body.content,
       author: req.body.author})
-    .then(post => res.status(201).json(post.serialize()))
+    .then(post => res.status(204).end())
     .catch(err => { 
       console.error(err);
       res.status(500).json({message: "Sorry, cannot create your post. Internal error."});
@@ -92,7 +92,7 @@ router.put('/:id', (req, res) => {
   });
   BlogPost
   .findByIdAndUpdate(req.params.id, {$set: toUpdate})
-  .then(post => {res.status(204).json({message: "Your post was updated!"})})
+  .then(post => res.status(200).json({message: "Your post was updated!"}))
   .catch(err => res.status(500).json({message: "Internal error"}));
 });
 

@@ -1,152 +1,210 @@
 const chai = require('chai');
 const chaiHttp = require('chai-http');
-
+const faker = require('faker');
+const mongoose = require("mongoose");
+const expect = chai.expect;
+const should = chai.should();
+const {TEST_DATABASE_URL} = require('../config');
+const { BlogPost } = require('../models');
 const { app, runServer, closeServer } = require('../server');
 
-// this lets us use *should* style syntax in our tests
-// so we can do things like `(1 + 1).should.equal(2);`
-// http://chaijs.com/api/bdd/
-const should = chai.should();
-
-// This let's us make HTTP requests
-// in our tests.
-// see: https://github.com/chaijs/chai-http
 chai.use(chaiHttp);
 
+// generate documents for testing using Faker library
+function seedBlogData() {
+  console.info('seeding data');
+  const seedData = [];
+  for (let i=1; i<=10; i++) {
+    seedData.push(generateBlogData());
+  }
+  return BlogPost.insertMany(seedData);
+}
+
+// generate an object represnting a blog post
+// can be used to generate seed data for db
+// or request.body data
+function generateBlogData() {
+  return {
+    title: faker.lorem.sentence(),
+    content: faker.lorem.content(),
+    author: {
+      firstName: faker.name.firstName(),
+      lastName:  faker.name.lastName()
+    },
+    created: faker.date.recent()
+}
+
+
+// this function deletes the entire database.
+// we'll call it in an `afterEach` block below
+// to ensure data from one test does not stick
+// around for next one
+function tearDownDb() {
+  console.warn('Deleting database');
+  return mongoose.connection.dropDatabase();
+}
+
 describe('BlogPosts', function() {
-  // Before our tests run, we activate the server. Our `runServer`
-  // function returns a promise, and we return the that promise by
-  // doing `return runServer`. If we didn't return a promise here,
-  // there's a possibility of a race condition where our tests start
-  // running before our server has started.
   before(function() {
-    return runServer();
+    return runServer(TEST_DATABASE_URL);
   });
 
-  // although we only have one test module at the moment, we'll
-  // close our server at the end of these tests. Otherwise,
-  // if we add another test module that also has a `before` block
-  // that starts our server, it will cause an error because the
-  // server would still be running from the previous tests.
+  beforeEach(function() {
+    return seedBlogData();
+  });
+
+  afterEach(function() {
+    return tearDownDb();
+  });
+
   after(function() {
     return closeServer();
   });
 
-  // test strategy:
-  //   1. make request to `/shopping-list`
-  //   2. inspect response object and prove has right code and have
-  //   right keys in response object.
-  it('should list posts on GET', function() {
-    // for Mocha tests, when we're dealing with asynchronous operations,
-    // we must either return a Promise object or else call a `done` callback
-    // at the end of the test. The `chai.request(server).get...` call is asynchronous
-    // and returns a Promise, so we just return it.
+describe('GET endpoint', function() {
+
+  it('should return all existing posts on GET', function() {
+
     return chai
       .request(app)
       .get('/posts')
-      .then(function(res) {
+      .then(function(_res) {
+        res = _res;
         res.should.have.status(200);
-        res.should.be.json;
-
-        // because we create 2 posts on app load
-        res.body.length.should.be.at.least(1);
-        // each item should be an object with key/value pairs
-        // for id, title, content, author, publishDate.
-        const expectedKeys = ['id', 'title', 'content', 'author', 'publishDate'];
-        res.body.forEach(function(item) {
-          item.should.be.a('object');
-          item.should.include.keys(expectedKeys);
-        });
+        res.body.posts.should.have.length.of.at.least(1);
+        return BlogPost.count();
+      })
+      .then(function(count) {
+        res.body.posts.should.have.length.of(count);
       });
   });
 
-  // test strategy:
-  //  1. make a POST request with data for a new post
-  //  2. inspect response object and prove it has right
-  //  status code and that the returned object has an `id`
-  it('should add a new post on POST', function() {
-    const newPost = {
-      title: 'Coffee',
-      content: 'coffee is particularly good in the mornings',
-      author: {
-        firstName:'Jane', 
-        lastName: 'Doe'}
-    };
-    return chai
-      .request(app)
-      .post('/posts')
-      .send(newPost)
-      .then(function(res) {
-        res.should.have.status(201);
-        res.should.be.json;
-        res.body.should.be.a('object');
-        res.body.should.include.keys('id', 'title', 'content', 'author', 'publishDate');
-        res.body.id.should.not.be.null;
-        // response should be deep equal to `newPost` from above if we assign
-        // `id` to it from `res.body.id`
-        res.body.should.deep.equal(Object.assign(newPost, { id: res.body.id, publishDate: res.body.publishDate }));
-      });
-  });
+  it('should return blog posts with right fields', function() {
 
-  // test strategy:
-  //  1. initialize some update data (we won't have an `id` yet)
-  //  2. make a GET request so we can get an item to update
-  //  3. add the `id` to `updateData`
-  //  4. Make a PUT request with `updateData`
-  //  5. Inspect the response object to ensure it
-  //  has right status code and that we get back an updated
-  //  item with the right data in it.
-  it('should update post on PUT', function() {
-    // we initialize our updateData here and then after the initial
-    // request to the app, we update it with an `id` property so
-    // we can make a second, PUT call to the app.
-    const updateData = {
-      title: 'Coffee',
-      content: 'coffee is particularly good in the mornings',
-      author: 'Jane Doe'
-    };
+    let resPost;
 
-    return (
-      chai
-        .request(app)
-        // first have to get so we have an idea of object to update
+      return chai.request(app)
         .get('/posts')
         .then(function(res) {
-          updateData.id = res.body[0].id;
-          // this will return a promise whose value will be the response
-          // object, which we can inspect in the next `then` back. Note
-          // that we could have used a nested callback here instead of
-          // returning a promise and chaining with `then`, but we find
-          // this approach cleaner and easier to read and reason about.
-          return chai
-            .request(app)
-            .put(`/posts/${updateData.id}`)
+          expect(res).to.have.status(200);
+          expect(res).to.be.json;
+          expect(res.body.posts).to.be.a('array');
+          expect(res.body.posts).to.have.length.of.at.least(1);
+
+          res.body.posts.forEach(function(post) {
+            expect(post).to.be.a('object');
+            expect(post).to.include.keys(
+              'id', 'title', 'content', 'author', 'created');
+          });
+          resPost = res.body.posts[0];
+          return BlogPost.findById(resPost.id);
+        })
+        .then(function(post) {
+          expect(resPost.id).to.equal(post.id);
+          expect(resPost.title).to.equal(post.title);
+          expect(resPost.content).to.equal(post.content);
+          expect(resPost.author).to.equal(post.author);
+          expect(resPost.created).to.equal(post.created);
+        });
+    });
+  });
+
+describe('POST endpoint', function() {
+    // strategy: make a POST request with data,
+    // then prove that the blog we get back has
+    // right keys, and that `id` is there (which means
+    // the data was inserted into db)
+    it('should add a new blog post', function() {
+
+      const newPost = generateBlogData();
+
+      return chai.request(app)
+        .post('/posts')
+        .send(newPost)
+        .then(function(res) {
+          expect(res).to.have.status(201);
+          expect(res).to.be.json;
+          expect(res.body).to.be.a('object');
+          expect(res.body).to.include.keys(
+            'id', 'title', 'content', 'author', 'created');
+          expect(res.body.name).to.equal(newPost.name);
+          // cause Mongo should have created id on insertion
+          expect(res.body.id).to.not.be.null;
+          expect(res.body.title).to.equal(newPost.title);
+          expect(res.body.author).to.equal(newPost.author);
+          expect(res.body.created).to.equal(newPost.created);
+
+          return BlogPost.findById(res.body.id);
+        })
+        .then(function(post) {
+          expect(post.title).to.equal(newPost.title);
+          expect(post.author.firstName).to.equal(newPost.author.firstName);
+          expect(post.author.lastName).to.equal(newPost.author.lastName);
+          expect(post.content).to.equal(newPost.content);
+          expect(post.created).to.equal(newPost.created);
+        });
+    });
+  });
+ 
+describe('PUT endpoint', function() {
+    // strategy:
+    //  1. Get an existing blog post from db
+    //  2. Make a PUT request to update that post
+    //  3. Prove post returned by request contains data we sent
+    //  4. Prove post in db is correctly updated
+    it('should update fields you send over', function() {
+      const updateData = {
+        title: 'This is a test post',
+        content: 'futuristic fusion, solar winds, star wars, star trek and harry potter'
+      };
+
+      return BlogPost
+        .findOne()
+        .then(function(post) {
+          updateData.id = post.id;
+
+          // make request then inspect it to make sure it reflects
+          // data we sent
+          return chai.request(app)
+            .put(`/posts/${post.id}`)
             .send(updateData);
         })
-        // prove that the PUT request has right status code
         .then(function(res) {
-          res.should.have.status(204);
+          expect(res).to.have.status(204);
+
+          return BlogPost.findById(updateData.id);
         })
-    );
+        .then(function(post) {
+          expect(post.title).to.equal(updateData.title);
+          expect(post.content).to.equal(updateData.content);
+        });
+    });
   });
 
-  // test strategy:
-  //  1. GET a shopping list items so we can get ID of one
-  //  to delete.
-  //  2. DELETE an item and ensure we get back a status 204
-  it('should delete items on DELETE', function() {
-    return (
-      chai
-        .request(app)
-        // first have to get so we have an `id` of item
-        // to delete
-        .get('/posts')
-        .then(function(res) {
-          return chai.request(app).delete(`/posts/${res.body[0].id}`);
+  describe('DELETE endpoint', function() {
+    // strategy:
+    //  1. get a blog post
+    //  2. make a DELETE request for that post's id
+    //  3. assert that response has right status code
+    //  4. prove that post with the id doesn't exist in db anymore
+    it('delete a blog post by id', function() {
+
+      let post;
+
+      return BlogPost
+        .findOne()
+        .then(function(_post) {
+          post = _post;
+          return chai.request(app).delete(`/restaurants/${post.id}`);
         })
         .then(function(res) {
-          res.should.have.status(204);
+          expect(res).to.have.status(204);
+          return BlogPost.findById(post.id);
         })
-    );
+        .then(function(_post) {
+          expect(_post).to.be.null;
+        });
+    });
   });
 });
+}
