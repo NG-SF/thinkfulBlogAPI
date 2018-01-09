@@ -84,7 +84,40 @@ describe('GET endpoint', function() {
       })
       .then(function(count) {
         expect(res.body.posts).to.have.lengthOf(count);
-      });
+      })
+      .catch(function (err) {
+            throw err;
+          });
+  });
+
+it('should find a blog by specific ID', function() {
+// strategy:
+//1. get back a blog posts returned by by GET request to `/posts/:id`
+//2. prove res has right status, data type
+
+  let res;
+  let blogPostID = {};
+
+      return BlogPost
+        .findOne()
+        .then(function(post) {
+          blogPostID.id = post.id;
+        });
+
+    return chai.request(app)
+      .get(`/posts/${blogPostID}`)
+      .then(function(_res) {
+// so subsequent .then blocks can access response object
+        res = _res;
+        expect(res).to.have.status(200);
+        return BlogPost.findById(blogPostID);
+      })
+      .then(function(post) {
+        expect(blogPostID).to.equal(post.id);
+      })
+      .catch(function (err) {
+            throw err;
+          });
   });
 
   it('should return blog posts with right fields', function() {
@@ -113,7 +146,10 @@ describe('GET endpoint', function() {
           expect(resPost.content).to.equal(post.content);
           expect(resPost.author).to.equal(post.author.firstName + " " + post.author.lastName);
           expect(resPost.created).to.equal(moment(post.created).format('MMMM Do YYYY'));
-        });
+        })
+        .catch(function (err) {
+            throw err;
+          });
     });
   });
 
@@ -123,21 +159,20 @@ describe('POST endpoint', function() {
 // right keys, and that `id` is there (which means
 // the data was inserted into db)
   it('should add a new blog post', function() {
-
-    // const newPost = generateBlogData();
     const newPost = {
       title: faker.lorem.sentence(),
       content: faker.lorem.paragraph(),
       author: {
         firstName: faker.name.firstName(),
         lastName:  faker.name.lastName()
-    }
+      }
     };
-
+    let res;
       return chai.request(app)
         .post('/posts')
         .send(newPost)
-        .then(function(res) {
+        .then(function(_res) {
+          res = _res;
           expect(res).to.have.status(201);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
@@ -152,9 +187,13 @@ describe('POST endpoint', function() {
         })
         .then(function(post) {
           expect(post.title).to.equal(newPost.title);
-          expect(post.author).to.equal(newPost.author.firstName + " " + newPost.author.lastName);
+          expect(post.author.firstName).to.equal(newPost.author.firstName);
+          expect(post.author.lastName).to.equal(newPost.author.lastName);
           expect(post.content).to.equal(newPost.content);
-        });
+        })
+        .catch(function (err) {
+            throw err;
+          });
     });
   });
  
@@ -189,7 +228,10 @@ describe('PUT endpoint', function() {
         .then(function(post) {
           expect(post.title).to.equal(updateData.title);
           expect(post.content).to.equal(updateData.content);
-        });
+        })
+        .catch(function (err) {
+            throw err;
+          });
     });
   });
 
@@ -199,7 +241,7 @@ describe('PUT endpoint', function() {
 //2. make a DELETE request for that post's id
 //3. assert that response has right status code
 //4. prove that post with the id doesn't exist in db anymore
-    it('delete a blog post by id', function() {
+    it('should delete a blog post by id', function() {
 
       let post;
 
@@ -215,7 +257,10 @@ describe('PUT endpoint', function() {
         })
         .then(function(_post) {
           expect(_post).to.be.null;
-        });
+        })
+        .catch(function (err) {
+            throw err;
+          });
     });
   });
 });

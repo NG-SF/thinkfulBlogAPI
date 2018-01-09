@@ -54,7 +54,7 @@ router.post('/', (req, res) => {
       title: req.body.title,
       content: req.body.content,
       author: req.body.author})
-    .then(post => res.status(201).end())
+    .then(post => res.status(201).json(post.serialize()))
     .catch(err => { 
       console.error(err);
       res.status(500).json({message: "Sorry, cannot create your post. Internal error."});
