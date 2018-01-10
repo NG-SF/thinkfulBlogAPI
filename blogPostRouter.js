@@ -1,9 +1,9 @@
+
 const express = require('express');
 const router = express.Router();
 const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
 const mongoose = require('mongoose');
-const moment = require('moment');
 const { BlogPost } = require('./models');
 
 mongoose.Promise = global.Promise;

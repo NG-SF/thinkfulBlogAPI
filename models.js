@@ -1,3 +1,4 @@
+(function() {
 'use strict';
 const mongoose = require('mongoose');
 const moment = require('moment');
@@ -16,11 +17,11 @@ const blogSchema = mongoose.Schema({
 
 // virtual property to return full author name
 blogSchema.virtual('authorName').get(function() {
-  return `${this.author.firstName} ${this.author.lastName}`.trim()});
+  return `${this.author.firstName} ${this.author.lastName}`.trim();});
 
 // virtual property to return date formated with moment.js
 blogSchema.virtual('publishDate').get(function() {
-  return moment(Date.now()).format('MMMM Do YYYY');
+  return moment(this.created).format('MMMM Do YYYY');
 });
 
 // instance method that returns blog posts in format that we want
@@ -32,7 +33,8 @@ blogSchema.methods.serialize = function() {
     created: this.publishDate,
     id: this._id
   };
-}
+};
 
 const BlogPost = mongoose.model('posts', blogSchema);
 module.exports = { BlogPost };
+})();

@@ -1,3 +1,4 @@
+(function() {
 'use strict';
 const express = require('express');
 const morgan = require('morgan');
@@ -61,3 +62,5 @@ if (require.main === module) {
 }
 
 module.exports = { app, runServer, closeServer };
+
+})();
